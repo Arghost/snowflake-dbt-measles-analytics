@@ -1,0 +1,22 @@
+version: 2
+
+models:
+  - name: mart_measles_country_year_risk
+    description: "Country-year measles risk mart combining vaccination coverage and reported cases."
+    columns:
+      - name: country_code
+        tests:
+          - not_null
+
+      - name: country_name
+        tests:
+          - not_null
+
+      - name: year
+        tests:
+          - not_null
+
+      - name: risk_score
+        description: "Composite risk score in [0,1] combining incidence and immunity gap."
+        tests:
+          - not_null
