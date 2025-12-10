@@ -1,0 +1,57 @@
+name: dbt Measles CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  dbt-ci:
+    runs-on: ubuntu-latest
+
+    env:
+      DBT_PROFILES_DIR: ./vaccine_measles_dbt
+      SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+      SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+      SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
+      SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+      SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE }}
+      SNOWFLAKE_SCHEMA: ${{ secrets.SNOWFLAKE_SCHEMA }}
+      SNOWFLAKE_PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSPHRASE }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Write Snowflake private key file
+        working-directory: ./vaccine_measles_dbt
+        run: |
+          echo "${{ secrets.SNOWFLAKE_PRIVATE_KEY_PEM }}" > snowflake_key.p8
+          chmod 600 snowflake_key.p8
+
+      - name: Install dbt-snowflake
+        run: |
+          python -m pip install --upgrade pip
+          pip install "dbt-core==1.8.0" "dbt-snowflake==1.8.0"
+
+      - name: dbt deps
+        working-directory: ./vaccine_measles_dbt
+        run: dbt deps
+
+      - name: dbt debug
+        working-directory: ./vaccine_measles_dbt
+        run: dbt debug --target dev
+
+      - name: dbt run (core models)
+        working-directory: ./vaccine_measles_dbt
+        run: dbt run --select stg_measles_* fact_measles_* mart_measles_* --target dev
+
+      - name: dbt test
+        working-directory: ./vaccine_measles_dbt
+        run: dbt test --select stg_measles_* fact_measles_* mart_measles_* --target dev
