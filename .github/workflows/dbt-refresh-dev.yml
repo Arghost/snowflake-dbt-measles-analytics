@@ -3,7 +3,6 @@ name: dbt Measles Refresh (dev)
 on:
   workflow_dispatch: # run manually desde Actions
   schedule:
-    - cron: "0 4 1 */3 *" # 1st of every month at 04:00 UTC (ajustable o eliminar si no quieres auto)
 
 jobs:
   dbt-refresh-dev:
